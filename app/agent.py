@@ -68,6 +68,7 @@ from app.disputes_store import (
 )
 from app.dispute_tools import draft_dispute_letter
 from app.treasury_tools import get_federal_benchmark_interest_rates
+from app.video_tools import generate_dispute_victory_video
 
 
 # WRITE: after each turn, send the session to Memory Bank for extraction.
@@ -89,8 +90,9 @@ root_agent = Agent(
         "including ALL user allergies, medical conditions, and dietary restrictions from previous conversations, and proactively use them to personalize your advocacy and interactions. "
         "Whenever the user mentions an allergy or dietary restriction, acknowledge and store it so it is never forgotten. "
         "You can inspect active disputes using `list_disputes` and `get_dispute`, record or update cases using `create_or_update_dispute`, "
-        "draft formal, legally grounded demand letters using `draft_dispute_letter`, and fetch official federal benchmark interest rates "
-        "via `get_federal_benchmark_interest_rates` to challenge exorbitant corporate late fees or financing penalties. "
+        "draft formal, legally grounded demand letters using `draft_dispute_letter`, fetch official federal benchmark interest rates "
+        "via `get_federal_benchmark_interest_rates` to challenge exorbitant corporate late fees or financing penalties, "
+        "and generate short celebratory victory/milestone videos using `generate_dispute_victory_video` when cases are won, fees are waived, or the user requests a celebration animation. "
         "Always review the factual details, calculate potential annual savings, and propose actionable escalation strategies."
     ),
     tools=[
@@ -100,6 +102,7 @@ root_agent = Agent(
         create_or_update_dispute,
         draft_dispute_letter,
         get_federal_benchmark_interest_rates,
+        generate_dispute_victory_video,
         get_weather,
         get_current_time,
     ],

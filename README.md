@@ -8,47 +8,52 @@ An AI-powered consumer advocate agent built with Google ADK (Agent Development K
 
 ## What the Agent Does
 
-The agent is built with the following core capabilities:
+Based strictly on the code implemented in `app/` and configured in `agents-cli-manifest.yaml`, the agent provides the following active capabilities:
 
-- **Dispute Tracking & Management (Firestore):**
-  - Manages active dispute cases in a native Google Cloud Firestore database (`disputes` collection).
+- **Dispute Tracking & Management (Google Cloud Firestore):**
+  - Manages active consumer dispute cases stored in Firestore (`disputes` collection).
   - Tools:
     - `list_disputes()`: Lists consumer disputes filtered by status (`open`, `in_review`, `resolved`).
-    - `get_dispute(dispute_id)`: Retrieves full details of a specific dispute, including provider, disputed amount, category, and negotiation strategy notes.
+    - `get_dispute(dispute_id)`: Retrieves full details of a specific dispute, including provider name, amount, category, and negotiation strategy notes.
     - `create_or_update_dispute(...)`: Creates new dispute records or updates existing status, deadlines, and potential savings.
 
 - **Legal Escalation & Demand Letter Drafting:**
-  - `draft_dispute_letter(...)`: Generates structured, legally grounded escalation demand letters citing relevant consumer protection frameworks (e.g., FCC Truth-in-Billing, FTC ROSCA for subscriptions, Fair Debt Collection Practices Act, and local municipal parking codes).
+  - `draft_dispute_letter(...)`: Generates structured, legally grounded escalation letters citing relevant consumer protection frameworks (e.g., FCC Truth-in-Billing, FTC ROSCA for subscriptions, Fair Debt Collection Practices Act, and local municipal parking codes).
 
 - **Benchmark Interest & Fee Analysis (U.S. Treasury Fiscal Data API):**
   - `get_federal_benchmark_interest_rates(...)`: Fetches live public benchmark interest rates from the U.S. Department of the Treasury Fiscal Data API to contest exorbitant corporate late payment penalties and arbitrary finance charges.
 
+- **Milestone & Victory Video Generation (Google Omni Model & Cloud Storage):**
+  - `generate_dispute_victory_video(...)`: Uses Google's Omni model (`gemini-omni-flash-preview`) in the `global` region via the Vertex AI Interactions API to generate animated celebration and milestone videos for resolved disputes.
+  - Video bytes are recorded as a session artifact using `tool_context.save_artifact` (visible in ADK Playground) and uploaded directly to a public Google Cloud Storage bucket (`auto-negotiator-assets-8376c931`), returning a public HTTPS URL.
+
 - **Cross-Session Long-Term Memory (Vertex AI Memory Bank):**
   - Uses `PreloadMemoryTool` and an automatic post-turn extraction callback (`add_session_to_memory`) backed by Vertex AI Memory Bank (`VertexAiMemoryBankService`).
-  - Remembers user provider accounts, billing details, negotiation preferences, past dispute outcomes, and user constraints across sessions.
+  - Remembers user provider accounts, billing details, negotiation preferences, past dispute outcomes, and user constraints across conversations.
 
-- **FastAPI Chat Web Frontend (A2A Protocol):**
-  - Built-in lightweight web chat interface located in `frontend/` powered by FastAPI and the A2A (Agent-to-Agent) protocol.
-  - Handles session/context continuity per user and renders text responses and A2UI cards.
+- **FastAPI Chat Web Frontend (A2A Protocol & A2UI Renderer):**
+  - Lightweight web chat interface located in `frontend/` powered by FastAPI and the A2A (Agent-to-Agent) protocol.
+  - Features sender avatars, modern dialog layout, 1-click dispute letter copying, and a client-side A2UI renderer for Card, Column, Row, Text, and List components.
 
 ---
 
 ## Architecture & Wired Google Cloud Services
 
-| Component | Service | Status | Description |
+| Component | Service / Technology | Status | Description |
 | :--- | :--- | :--- | :--- |
-| **Agent Framework** | Google ADK & Gemini 2.5 Flash | **Wired & Active** | Core reasoning and orchestration |
+| **Agent Framework** | Google ADK & Gemini Flash | **Wired & Active** | Core agent reasoning, orchestration, and callbacks |
 | **Protocol** | A2A Protocol (v1.0) | **Wired & Active** | Agent-to-Agent passthrough communication |
-| **Database** | Google Cloud Firestore | **Wired & Active** | Stores consumer disputes (`disputes_store.py`) |
-| **Memory** | Vertex AI Memory Bank | **Wired & Active** | Persistent multi-session memory |
-| **External API** | U.S. Treasury Fiscal Data API | **Wired & Active** | Live benchmark rates for fee disputes |
-| **Assets Bucket** | Google Cloud Storage | **Wired & Active** | Public assets bucket created for dispute documents & media |
-| **Web Proxy & UI** | FastAPI + HTML5 / CSS | **Wired & Active** | Responsive web client communicating via A2A |
+| **Database** | Google Cloud Firestore | **Wired & Active** | Stores consumer disputes (`app/disputes_store.py`) |
+| **Memory** | Vertex AI Memory Bank | **Wired & Active** | Cross-session persistent memory (`PreloadMemoryTool`) |
+| **Omni Video Model** | Vertex AI (`gemini-omni-flash-preview`) | **Wired & Active** | Text-to-video generation for dispute victories (`app/video_tools.py`) |
+| **Assets Storage** | Google Cloud Storage | **Wired & Active** | Public assets bucket for generated video artifacts |
+| **External API** | U.S. Treasury Fiscal Data API | **Wired & Active** | Real-time federal benchmark rates for late fee disputes |
+| **Web Proxy & UI** | FastAPI + HTML5 / CSS | **Wired & Active** | Web chat interface communicating with agent over A2A |
 
 ### Planned / Not Yet Implemented
-- **Image Generation / Victory Badges:** Cloud Storage bucket is provisioned; image generation tools (e.g. Imagen-based victory badge or annotated evidence generation) are planned for a future release.
-- **A2UI Interactive Card Rendering in app code:** The frontend contains the built-in A2UI renderer, but dynamic A2UI surface card generation callbacks inside `app/` are planned.
-- **Code Execution Sandbox:** Planned for complex financial interest compounding calculations and bill CSV parsing.
+- **Dynamic A2UI Surface Generation in Agent Code:** The frontend has the client-side A2UI catalog renderer, but generating dynamic A2UI surface updates directly from agent tool callbacks inside `app/` is planned.
+- **Code Execution Sandbox:** Planned for complex amortized interest compounding calculations and utility bill CSV parsing.
+- **Image Generation / Evidence Annotation:** Imagen-based photo evidence redaction is planned for a future release.
 
 ---
 
@@ -61,16 +66,20 @@ auto-negotiator/
 │   ├── dispute_tools.py       # Demand letter drafting tool
 │   ├── disputes_store.py      # Firestore database operations
 │   ├── treasury_tools.py      # U.S. Treasury API tool
+│   ├── video_tools.py         # Gemini Omni video generation & Cloud Storage tool
 │   ├── fast_api_app.py        # Local ADK FastAPI runner
 │   └── app_utils/             # Service wiring (Memory Bank, sessions)
 ├── frontend/
 │   ├── main.py                # FastAPI A2A proxy server
 │   ├── requirements.txt       # Frontend dependencies
+│   ├── Dockerfile             # Container configuration for Cloud Run
 │   └── static/
-│       └── index.html         # Web chat UI
+│       └── index.html         # Web chat UI with A2UI renderer & copy actions
 ├── agents-cli-manifest.yaml   # Agent manifest configuration
 ├── deployment_metadata.json   # Deployment tracking info
 ├── pyproject.toml             # Python dependencies (UV)
+├── demo.mp4                   # Recorded demo video with upbeat lo-fi audio
+├── demo.gif                   # Looping inline demo animation
 └── seed_firestore.py          # Script to seed initial dispute data
 ```
 
@@ -81,7 +90,11 @@ auto-negotiator/
 ### 1. Prerequisites
 - Python 3.11+
 - `uv` or `pip`
-- Google Cloud SDK (`gcloud`) authenticated with Application Default Credentials (`gcloud auth application-default login`)
+- Google Cloud SDK (`gcloud`) authenticated with Application Default Credentials:
+  ```bash
+  gcloud auth login
+  gcloud auth application-default login
+  ```
 
 ### 2. Setup the Agent Backend
 From the project root:
@@ -98,7 +111,7 @@ uv run adk web . --port 8080 --reload_agents
 ```
 
 ### 3. Setup and Run the Frontend Chat Proxy
-To run the lightweight chat web interface against your agent:
+To run the web chat interface against your agent:
 
 ```bash
 cd frontend

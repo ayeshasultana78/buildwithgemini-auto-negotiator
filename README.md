@@ -2,6 +2,8 @@
 
 An AI-powered consumer advocate agent built with Google ADK (Agent Development Kit), Vertex AI, and Google Cloud. **Auto-Negotiator** helps everyday consumers audit, dispute, and negotiate corporate bills, bogus fees, parking tickets, and recurring subscription overcharges.
 
+![Auto-Negotiator Demo](demo.gif)
+
 ---
 
 ## What the Agent Does
